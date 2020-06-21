@@ -72,7 +72,7 @@ static void scm_disable_sdi(void);
 
 static int in_panic;
 static int dload_type = SCM_DLOAD_FULLDUMP;
-static int download_mode = 1;
+static int download_mode = 0;
 static struct kobject dload_kobj;
 static void *dload_mode_addr, *dload_type_addr;
 static bool dload_mode_enabled;
@@ -294,12 +294,19 @@ static void msm_restart_prepare(const char *cmd)
 				(cmd != NULL && cmd[0] != '\0'));
 	}
 
+	/* To preserve console-ramoops */
+	need_warm_reset = true;
+
 	/* Hard reset the PMIC unless memory contents must be maintained. */
 	if (need_warm_reset) {
 		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
 	} else {
 		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
 	}
+
+	if (in_panic)
+		__raw_writel(0x77665501, restart_reason);
+	else
 
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
